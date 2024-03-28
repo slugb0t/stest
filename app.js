@@ -4,8 +4,6 @@ const { Octokit } = require("@octokit/rest");
 const axios = require("axios");
 require("dotenv").config();
 
-const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL;
-
 /**
  * This is the main entrypoint to your Probot app
  * @param {import('probot').Probot} app
@@ -19,13 +17,6 @@ module.exports = (app) => {
    */
   app.on("issues.opened", async (context) => {
     console.log("issue opened");
-
-    if (
-      context.payload.repository.owner.login !== "fairdataihub" &&
-      context.payload.repository.owner.login !== "misanlab"
-    ) {
-      return;
-    }
 
     // Don't respond to the status messages
     if (
@@ -91,13 +82,6 @@ module.exports = (app) => {
   app.on("issues.closed", async (context) => {
     console.log("issue closed");
 
-    if (
-      context.payload.repository.owner.login !== "fairdataihub" &&
-      context.payload.repository.owner.login !== "misanlab"
-    ) {
-      return;
-    }
-
     /**
      * * Don't respond to the status messages
      */
@@ -134,13 +118,6 @@ module.exports = (app) => {
   app.on("pull_request.opened", async (context) => {
     console.log("pull request opened");
 
-    if (
-      context.payload.repository.owner.login !== "fairdataihub" &&
-      context.payload.repository.owner.login !== "misanlab"
-    ) {
-      return;
-    }
-
     // Don't respond to the pull requests opened by renovate
     if (context.payload.pull_request.user.type === "Bot") {
       if (context.payload.pull_request.user.login === "renovate[bot]") {
@@ -167,12 +144,7 @@ module.exports = (app) => {
   app.on("pull_request.closed", async (context) => {
     console.log("pull request closed");
 
-    if (
-      context.payload.repository.owner.login !== "fairdataihub" &&
-      context.payload.repository.owner.login !== "misanlab"
-    ) {
-      return;
-    }
+
 
     // Don't respond to the pull requests closed by renovate
     if (context.payload.pull_request.user.type === "Bot") {
@@ -200,12 +172,7 @@ module.exports = (app) => {
   app.on("pull_request.edited", async (context) => {
     console.log("pull request edited");
 
-    if (
-      context.payload.repository.owner.login !== "fairdataihub" &&
-      context.payload.repository.owner.login !== "misanlab"
-    ) {
-      return;
-    }
+
 
     // Don't respond to the pull requests opened by renovate
     if (context.payload.pull_request.user.type === "Bot") {
@@ -233,12 +200,6 @@ module.exports = (app) => {
   app.on("pull_request.ready_for_review", async (context) => {
     console.log("pull request ready for review");
 
-    if (
-      context.payload.repository.owner.login !== "fairdataihub" &&
-      context.payload.repository.owner.login !== "misanlab"
-    ) {
-      return;
-    }
 
     // Get the pull request number
     const prNumber = context.payload.pull_request.number;
@@ -297,12 +258,6 @@ module.exports = (app) => {
   app.on("star.deleted", async (context) => {
     console.log("repo unstarred");
 
-    if (
-      context.payload.repository.owner.login !== "fairdataihub" &&
-      context.payload.repository.owner.login !== "misanlab"
-    ) {
-      return;
-    }
 
     await axios.post(SLACK_WEBHOOK_URL, {
       blocks: [
@@ -364,13 +319,6 @@ module.exports = (app) => {
   app.on("release.published", async (context) => {
     console.log("release published");
 
-    if (
-      context.payload.repository.owner.login !== "fairdataihub" &&
-      context.payload.repository.owner.login !== "misanlab"
-    ) {
-      return;
-    }
-
     // if the repository name is SODA-for-SPARC and the release is a beta release, return
     if (
       context.payload.repository.name === "SODA-for-SPARC" &&
@@ -388,26 +336,6 @@ module.exports = (app) => {
 
     // Add reactions to the release
     await addReactionsToRelease(owner, repo, release.id);
-
-    await axios.post(SLACK_WEBHOOK_URL, {
-      blocks: [
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `New release published! :rocket: \n The <${context.payload.repository.html_url}|${context.payload.repository.name}> repository in the <${context.payload.repository.owner.html_url}|${context.payload.repository.owner.login}> organization just published a new release! :tada: `,
-          },
-          accessory: {
-            type: "image",
-            image_url: `https://api.dicebear.com/5.x/big-smile/png?seed=${context.id}`,
-            alt_text: "image",
-          },
-        },
-        {
-          type: "divider",
-        },
-      ],
-    });
 
     return;
   });
@@ -449,11 +377,7 @@ module.exports = (app) => {
 
     const owner = context.payload.installation.account.login;
 
-    // Check if the repo is in the fairdataihub or misanlab org
-    if (owner !== "fairdataihub" && owner !== "misanlab") {
-      return;
-    }
-
+    // Check if the repo is in the fairdataihub or misanlab or
     for (const repo of context.payload.repositories) {
       const repoName = repo.name;
 
@@ -477,25 +401,6 @@ module.exports = (app) => {
       }
 
       // Send a slack message
-      await axios.post(SLACK_WEBHOOK_URL, {
-        blocks: [
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: `New installation created! :rocket: \n The app was installed to the ${repoName} repository in the <${context.payload.installation.account.html_url}|${owner}> organization! :tada:`,
-            },
-            accessory: {
-              type: "image",
-              image_url: `https://api.dicebear.com/5.x/fun-emoji/png?seed=${context.id}`,
-              alt_text: "image",
-            },
-          },
-          {
-            type: "divider",
-          },
-        ],
-      });
     }
 
     return;
@@ -514,9 +419,6 @@ module.exports = (app) => {
       const repoName = repo.name;
 
       // Check if the repo is in the fairdataihub or misanlab org
-      if (owner !== "fairdataihub" && owner !== "misanlab") {
-        continue;
-      }
 
       // Check if the repo is a fork
       if (repo.fork) {
@@ -542,25 +444,6 @@ module.exports = (app) => {
         await addReactionsToRelease(owner, repoName, release.id);
       }
 
-      await axios.post(SLACK_WEBHOOK_URL, {
-        blocks: [
-          {
-            type: "section",
-            text: {
-              type: "mrkdwn",
-              text: `New repository added! ➕ \n The app was installed to the ${repoName} repository in the <${context.payload.installation.account.html_url}|${owner}> organization! :tada:`,
-            },
-            accessory: {
-              type: "image",
-              image_url: `https://api.dicebear.com/5.x/fun-emoji/png?seed=${context.id}`,
-              alt_text: "image",
-            },
-          },
-          {
-            type: "divider",
-          },
-        ],
-      });
     }
 
     return;
@@ -577,9 +460,6 @@ module.exports = (app) => {
     const repoName = context.payload.repository.name;
 
     // Check if the repo is in the fairdataihub or misanlab org
-    if (owner !== "fairdataihub" && owner !== "misanlab") {
-      return;
-    }
 
     // Check if the repo is a fork
     if (repo.fork) {
@@ -607,26 +487,6 @@ module.exports = (app) => {
 
       await addReactionsToRelease(owner, repoName, release.id);
     }
-
-    await axios.post(SLACK_WEBHOOK_URL, {
-      blocks: [
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `New repository created! ✨ \n The app was installed to the ${repoName} repository in the <${context.payload.installation.account.html_url}|${owner}> organization! :tada:`,
-          },
-          accessory: {
-            type: "image",
-            image_url: `https://api.dicebear.com/5.x/fun-emoji/png?seed=${context.id}`,
-            alt_text: "image",
-          },
-        },
-        {
-          type: "divider",
-        },
-      ],
-    });
 
     return;
   });
